@@ -1,0 +1,28 @@
+{
+  "name": "isobar-pr-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orders desk: a small Express + React app that exists to be reviewed by isobar-pr.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:graph": "node scripts/check-graph.mjs",
+    "seed": "scripts/seed-history.sh"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
