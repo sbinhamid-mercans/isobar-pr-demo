@@ -45,3 +45,12 @@ export function lineTotal(line: OrderLine): number {
   return line.quantity * line.unitPriceCents;
 }
 
+export function applyDiscount(amountCents: number, tier: Tier, couponPercent = 0): number {
+  if (couponPercent < 0 || couponPercent > 100) {
+    throw new RangeError(`coupon must be between 0 and 100, got ${couponPercent}`);
+  }
+  if (amountCents <= 0) return 0;
+  const rate = Math.min(TIER_DISCOUNT[tier] + couponPercent / 100, MAX_DISCOUNT_RATE);
+  return Math.round(amountCents * rate);
+}
+
