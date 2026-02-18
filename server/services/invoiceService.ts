@@ -54,3 +54,29 @@ export function applyDiscount(amountCents: number, tier: Tier, couponPercent = 0
   return Math.round(amountCents * rate);
 }
 
+export function taxFor(customer: Customer, subtotalCents: number, lines: OrderLine[]): number {
+  const exempt = lines.some((line) => line.sku.startsWith(EXEMPT_SKU_PREFIX));
+  const units = lines.reduce((sum, line) => sum + line.quantity, 0);
+  let rate: number;
+  if (customer.region === 'local') {
+    rate = 0.08;
+    if (exempt) rate = 0;
+  } else if (customer.region === 'regional') {
+    rate = 0.1;
+    if (exempt) rate = 0.02;
+    if (units > BULK_UNITS) rate -= 0.01;
+  } else if (customer.region === 'national') {
+    rate = 0.12;
+    if (exempt && customer.tier !== 'standard') rate = 0.05;
+  } else if (customer.region === 'eu') {
+    rate = 0.2;
+    if (subtotalCents < SMALL_ORDER_CENTS) rate = 0;
+  } else if (customer.region === 'world') {
+    rate = 0;
+    if (subtotalCents > IMPORT_THRESHOLD_CENTS) rate = 0.05;
+  } else {
+    rate = 0.12;
+  }
+  return Math.round(subtotalCents * rate);
+}
+
