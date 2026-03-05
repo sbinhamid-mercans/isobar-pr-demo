@@ -60,3 +60,14 @@ export function orderTotal(order: Order): number {
   return total;
 }
 
+export function summarizeOrders(orders: Order[], customers: Customer[]): OrderSummary[] {
+  if (orders.length === 0) return [];
+  const byId = new Map(customers.map((c) => [c.id, c]));
+  return orders.map((order) => ({
+    id: order.id,
+    customer: byId.get(order.customerId)?.name ?? 'unknown',
+    totalCents: orderTotal(order),
+    status: order.status,
+  }));
+}
+
