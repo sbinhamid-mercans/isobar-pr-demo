@@ -80,3 +80,11 @@ export function taxFor(customer: Customer, subtotalCents: number, lines: OrderLi
   return Math.round(subtotalCents * rate);
 }
 
+export function roundCents(value: number, mode: 'half-up' | 'bankers' = 'half-up'): number {
+  // 'bankers' sends exact halves to the even neighbour.
+  if (mode === 'half-up') return Math.round(value);
+  const floor = Math.floor(value);
+  if (value - floor !== 0.5) return Math.round(value);
+  return floor % 2 === 0 ? floor : floor + 1;
+}
+
