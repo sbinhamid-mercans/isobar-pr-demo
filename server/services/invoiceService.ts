@@ -88,3 +88,33 @@ export function roundCents(value: number, mode: 'half-up' | 'bankers' = 'half-up
   return floor % 2 === 0 ? floor : floor + 1;
 }
 
+export function buildInvoice(order: Order, customer: Customer, issuedAt = new Date()): Invoice {
+  if (order.status === 'draft' || order.status === 'refunded') {
+    throw new Error(`order ${order.id} cannot be invoiced while ${order.status}`);
+  }
+  let subtotal = 0;
+  let discount = 0;
+  for (const line of order.lines) {
+    const total = lineTotal(line);
+    if (total === 0) continue;
+    subtotal += total;
+    if (line.sku.startsWith(PROMO_SKU_PREFIX)) {
+      discount += line.quantity >= BULK_QUANTITY ? total * 0.1 : total * 0.05;
+    } else if (customer.tier !== 'standard') {
+      discount += applyDiscount(total, customer.tier);
+    }
+  }
+  if (discount > subtotal) discount = subtotal;
+  const discountCents = roundCents(discount, 'bankers');
+  const taxCents = taxFor(customer, subtotal - discountCents, order.lines);
+  return {
+    id: newId('inv'),
+    orderId: order.id,
+    subtotalCents: subtotal,
+    discountCents,
+    taxCents,
+    totalCents: subtotal - discountCents + taxCents,
+    dueAt: addDays(issuedAt.toISOString(), PAYMENT_TERMS_DAYS),
+  };
+}
+
