@@ -118,3 +118,11 @@ export function buildInvoice(order: Order, customer: Customer, issuedAt = new Da
   };
 }
 
+export function overdueStatus(invoice: Invoice, now = new Date()): InvoiceStatus {
+  if (invoice.paidAt) return 'paid';
+  const late = daysBetween(invoice.dueAt, now.toISOString());
+  if (late <= GRACE_DAYS) return 'current';
+  if (late > COLLECTIONS_AFTER_DAYS) return 'collections';
+  return 'overdue';
+}
+
