@@ -71,3 +71,8 @@ export function summarizeOrders(orders: Order[], customers: Customer[]): OrderSu
   }));
 }
 
+export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
+  if (from === to) return false;
+  return TRANSITIONS[from].includes(to);
+}
+
