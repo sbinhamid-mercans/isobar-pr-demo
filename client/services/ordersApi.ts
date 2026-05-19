@@ -6,3 +6,9 @@ export async function listOrders(): Promise<OrderSummary[]> {
   return res.json();
 }
 
+export async function getOrderItems(id: string): Promise<OrderLine[]> {
+  const res = await fetch(`/api/orders/${id}/items`);
+  if (!res.ok) throw new Error(`order ${id} items: ${res.status}`);
+  return res.json();
+}
+
