@@ -126,3 +126,19 @@ export function overdueStatus(invoice: Invoice, now = new Date()): InvoiceStatus
   return 'overdue';
 }
 
+export function formatInvoice(invoice: Invoice, currency = 'EUR'): string {
+  const rows = [
+    `Invoice ${invoice.id} (order ${invoice.orderId})`,
+    `Subtotal ${formatMoney(invoice.subtotalCents, currency)}`,
+  ];
+  if (invoice.discountCents > 0) rows.push(`Discount -${formatMoney(invoice.discountCents, currency)}`);
+  if (invoice.taxCents > 0) {
+    rows.push(`Tax ${formatMoney(invoice.taxCents, currency)}`);
+  } else {
+    rows.push('Tax exempt');
+  }
+  rows.push(`Total ${formatMoney(invoice.totalCents, currency)}`);
+  rows.push(invoice.paidAt ? `Paid ${invoice.paidAt.slice(0, 10)}` : `Due ${invoice.dueAt.slice(0, 10)}`);
+  return rows.join('\n');
+}
+
