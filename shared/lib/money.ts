@@ -15,3 +15,10 @@ export function parseMoney(input: string): number | null {
   return Math.round(value * 100);
 }
 
+export function sumCents(values: number[]): number {
+  let total = 0;
+  for (const value of values) {
+    if (Number.isFinite(value)) total += value;
+  }
+  return total;
+}
