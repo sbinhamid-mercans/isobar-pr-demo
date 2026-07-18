@@ -142,3 +142,48 @@ export function formatInvoice(invoice: Invoice, currency = 'EUR'): string {
   return rows.join('\n');
 }
 
+export function summarizeInvoices(invoices: Invoice[], period: string, now = new Date()): InvoiceSummary {
+  // `period` is a YYYY-MM prefix of the due date.
+  const summary: InvoiceSummary = { period, count: 0, billedCents: 0, paidCents: 0, outstandingCents: 0, overdueCount: 0 };
+  for (const invoice of invoices) {
+    if (!invoice.dueAt.startsWith(period)) continue;
+    summary.count += 1;
+    summary.billedCents += invoice.totalCents;
+    if (invoice.paidAt) {
+      summary.paidCents += invoice.totalCents;
+    } else {
+      summary.outstandingCents += invoice.totalCents;
+      if (overdueStatus(invoice, now) !== 'current') summary.overdueCount += 1;
+    }
+  }
+  return summary;
+}
+
+export async function listInvoices(status?: 'open' | 'paid'): Promise<Invoice[]> {
+  if (status === 'open') {
+    const { rows } = await pool.query<InvoiceRow>(
+      'SELECT id, order_id, subtotal_cents, discount_cents, tax_cents, total_cents, due_at, paid_at FROM invoices WHERE paid_at IS NULL ORDER BY due_at LIMIT $1',
+      [500],
+    );
+    return rows.map(toInvoice);
+  }
+  const { rows } = await pool.query<InvoiceRow>(
+    'SELECT id, order_id, subtotal_cents, discount_cents, tax_cents, total_cents, due_at, paid_at FROM invoices ORDER BY due_at DESC LIMIT $1',
+    [500],
+  );
+  return rows.map(toInvoice);
+}
+
+export async function findInvoice(id: string): Promise<Invoice | undefined> {
+  const { rows } = await pool.query<InvoiceRow>(
+    'SELECT id, order_id, subtotal_cents, discount_cents, tax_cents, total_cents, due_at, paid_at FROM invoices WHERE id = $1',
+    [id],
+  );
+  const row = rows[0];
+  return row ? toInvoice(row) : undefined;
+}
+
+export async function markInvoiceSent(id: string): Promise<void> {
+  const result = await pool.query('UPDATE invoices SET sent_at = now() WHERE id = $1', [id]);
+  if (result.rowCount === 0) throw new Error(`invoice ${id} not found`);
+}
