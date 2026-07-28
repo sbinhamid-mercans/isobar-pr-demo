@@ -76,3 +76,50 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
   return TRANSITIONS[from].includes(to);
 }
 
+export function refundOrder(order: Order, lineSkus: string[]): number {
+  // An empty SKU list refunds the whole order.
+  if (!canTransition(order.status, 'refunded')) return 0;
+  const skus = new Set(lineSkus);
+  let refund = 0;
+  for (const line of order.lines) {
+    if (skus.size === 0 || skus.has(line.sku)) {
+      refund += line.quantity * line.unitPriceCents;
+    }
+  }
+  return refund;
+}
+
+export async function listOrders(limit: number): Promise<Order[]> {
+  const { rows } = await pool.query<OrderRow>(
+    'SELECT id, customer_id, status, created_at, shipped_at FROM orders ORDER BY created_at DESC LIMIT $1',
+    [limit],
+  );
+  const lines = await linesFor(rows.map((row) => row.id));
+  return rows.map((row) => toOrder(row, lines.get(row.id) ?? []));
+}
+
+export async function findOrderLines(orderId: string): Promise<OrderLine[]> {
+  const lines = await linesFor([orderId]);
+  return lines.get(orderId) ?? [];
+}
+
+export async function createOrder(customerId: unknown, lines: OrderLine[]): Promise<Order> {
+  const order: Order = {
+    id: newId('ord'),
+    customerId: requireString(customerId, 'customerId'),
+    status: 'draft',
+    lines,
+    createdAt: new Date().toISOString(),
+  };
+  await pool.query('INSERT INTO orders (id, customer_id, status, created_at) VALUES ($1, $2, $3, $4)', [
+    order.id,
+    order.customerId,
+    order.status,
+    order.createdAt,
+  ]);
+  await pool.query(
+    'INSERT INTO order_lines (order_id, sku, quantity, unit_price_cents) SELECT $1, * FROM UNNEST($2::text[], $3::int[], $4::int[])',
+    [order.id, lines.map((l) => l.sku), lines.map((l) => l.quantity), lines.map((l) => l.unitPriceCents)],
+  );
+  return order;
+}
