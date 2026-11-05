@@ -17,3 +17,9 @@ export async function fetchRevenue(period: string): Promise<InvoiceSummary> {
 export function prefetchDashboard() {
   return useDashboard().refresh();
 }
+
+export async function exportOrdersReport(): Promise<Blob> {
+  const res = await fetch('/api/orders/export');
+  if (!res.ok) throw new Error(`orders export: ${res.status}`);
+  return res.blob();
+}
