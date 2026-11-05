@@ -4,6 +4,7 @@
   "private": true,
   "description": "Orders desk: a small Express + React app that exists to be reviewed by isobar-pr.",
   "type": "module",
+  "engines": { "node": ">=20.19" },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
