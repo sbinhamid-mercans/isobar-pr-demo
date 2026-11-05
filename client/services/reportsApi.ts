@@ -1,3 +1,4 @@
+import { useDashboard } from '../hooks/useDashboard';
 import type { Invoice, InvoiceSummary } from '../../shared/types';
 
 export async function fetchDashboard(): Promise<Invoice[]> {
@@ -11,4 +12,8 @@ export async function fetchRevenue(period: string): Promise<InvoiceSummary> {
   const res = await fetch(`/api/invoices?period=${encodeURIComponent(period)}`);
   if (!res.ok) throw new Error(`revenue ${period}: ${res.status}`);
   return res.json();
+}
+
+export function prefetchDashboard() {
+  return useDashboard().refresh();
 }
