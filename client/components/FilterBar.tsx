@@ -15,7 +15,7 @@ export function FilterBar(props: FilterBarProps) {
   return (
     <form role="search" onSubmit={(e) => e.preventDefault()}>
       <label>
-        Filter orders
+        Filter by status
         <select value={props.status} onChange={(e) => props.onStatusChange(e.target.value as StatusFilter)}>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
