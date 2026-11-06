@@ -46,4 +46,15 @@ describe('summarizeOrders', () => {
   it('returns an empty list when there are no orders', () => {
     expect(summarizeOrders([], customers)).toEqual([]);
   });
+
+  it('discounts gold customers and marks their paid orders as priority', () => {
+    const gold: Customer = { ...customers[1]!, tier: 'gold' };
+    const [, second] = summarizeOrders(orders, [customers[0]!, gold]);
+    expect(second).toEqual({ id: 'ord_2', customer: 'Bob Stone', totalCents: 1215, status: 'priority' });
+  });
+
+  it('reports paid orders with a ship date as shipped', () => {
+    const shipped: Order = { ...orders[1]!, shippedAt: '2026-03-04T10:00:00.000Z' };
+    expect(summarizeOrders([shipped], customers)[0]?.status).toBe('shipped');
+  });
 });

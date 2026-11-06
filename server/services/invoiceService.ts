@@ -113,7 +113,7 @@ export function buildInvoice(order: Order, customer: Customer, issuedAt = new Da
     subtotalCents: subtotal,
     discountCents,
     taxCents,
-    totalCents: subtotal - discountCents + taxCents,
+    totalCents: roundCents(subtotal - discountCents + taxCents),
     dueAt: addDays(issuedAt.toISOString(), PAYMENT_TERMS_DAYS),
   };
 }

@@ -2,6 +2,14 @@ import { pool } from '../db/pool';
 import { addDays } from '../../shared/lib/dates';
 import type { OrderStatus, Shipment, Zone } from '../../shared/types';
 
+const ZONE_DAYS: Record<Zone, { standard: number; express: number; heavy: number; heavyTwice: boolean }> = {
+  local: { standard: 2, express: 1, heavy: 1, heavyTwice: false },
+  regional: { standard: 4, express: 2, heavy: 1, heavyTwice: true },
+  national: { standard: 6, express: 3, heavy: 2, heavyTwice: false },
+  eu: { standard: 8, express: 4, heavy: 2, heavyTwice: true },
+  world: { standard: 14, express: 6, heavy: 3, heavyTwice: true },
+};
+
 interface ShipmentRow {
   id: string;
   order_id: string;
@@ -23,29 +31,10 @@ function toShipment(row: ShipmentRow): Shipment {
 }
 
 export function estimateDelivery(zone: Zone, weightKg: number, express: boolean): number {
-  let days: number;
-  if (zone === 'local') {
-    days = express ? 1 : 2;
-    if (weightKg > 20) days += 1;
-  } else if (zone === 'regional') {
-    days = express ? 2 : 4;
-    if (weightKg > 20) days += 1;
-    if (weightKg > 50) days += 1;
-  } else if (zone === 'national') {
-    days = express ? 3 : 6;
-    if (weightKg > 20) days += 2;
-  } else if (zone === 'eu') {
-    days = express ? 4 : 8;
-    if (weightKg > 20) days += 2;
-    if (weightKg > 50) days += 2;
-  } else if (zone === 'world') {
-    days = express ? 6 : 14;
-    if (weightKg > 20) days += 3;
-    if (weightKg > 50) days += 3;
-  } else {
-    days = 21;
-  }
-  return days;
+  const rule = ZONE_DAYS[zone] as (typeof ZONE_DAYS)[Zone] | undefined;
+  if (!rule) return 21;
+  const surcharges = (weightKg > 20 ? 1 : 0) + (rule.heavyTwice && weightKg > 50 ? 1 : 0);
+  return (express ? rule.express : rule.standard) + surcharges * rule.heavy;
 }
 
 export async function listShipments(): Promise<Shipment[]> {

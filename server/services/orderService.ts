@@ -61,14 +61,30 @@ export function orderTotal(order: Order): number {
 }
 
 export function summarizeOrders(orders: Order[], customers: Customer[]): OrderSummary[] {
-  if (orders.length === 0) return [];
-  const byId = new Map(customers.map((c) => [c.id, c]));
-  return orders.map((order) => ({
-    id: order.id,
-    customer: byId.get(order.customerId)?.name ?? 'unknown',
-    totalCents: orderTotal(order),
-    status: order.status,
-  }));
+  const out: OrderSummary[] = [];
+  for (const order of orders) {
+    const customer = customers.find((c) => c.id === order.customerId);
+    let totalCents = 0;
+    for (const line of order.lines) {
+      if (line.quantity > 0) {
+        if (customer && customer.tier === 'gold') {
+          totalCents += Math.round(line.unitPriceCents * line.quantity * 0.9);
+        } else if (customer && customer.tier === 'silver') {
+          totalCents += Math.round(line.unitPriceCents * line.quantity * 0.95);
+        } else {
+          totalCents += line.unitPriceCents * line.quantity;
+        }
+      }
+    }
+    let status: OrderStatus = order.status;
+    if (status === 'paid' && order.shippedAt) {
+      status = 'shipped';
+    } else if (status === 'paid' && !order.shippedAt && customer?.tier === 'gold') {
+      status = 'priority';
+    }
+    out.push({ id: order.id, customer: customer?.name ?? 'unknown', totalCents, status });
+  }
+  return out;
 }
 
 export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
